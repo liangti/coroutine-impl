@@ -138,3 +138,48 @@ TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
     ASSERT_EQ(NestFlowTest::states[2], 1);
     ASSERT_EQ(NestFlowTest::states[3], 2);
 }
+
+class GStatesDoubleOperator: public Coroutine{
+public:
+    Coroutine* next;
+    GStatesDoubleOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
+    : value(value), jump(jump), Coroutine(0, id){}
+    void routine(){
+        NestFlowTest::add(value);
+        if(next){
+            jump(next);
+        }
+        NestFlowTest::add(value);
+        if(next){
+            jump(next);
+        }
+        NestFlowTest::add(value);
+    }
+private:
+    int value;
+    std::function<void(Coroutine*)> jump;
+};
+
+TEST_F(NestFlowTest, copy_stack_call_overlap_complex_sequences){
+    char start;
+    StackBottom = &start;
+    GStatesDoubleOperator* one = new GStatesDoubleOperator(1, call);
+    GStatesDoubleOperator* two = new GStatesDoubleOperator(2, call);
+    GStatesDoubleOperator* three = new GStatesDoubleOperator(3, call);
+    one->next = two;
+    two->next = three;
+    three->next = one;
+    call(one);
+    ASSERT_EQ(NestFlowTest::idx, 9);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 3);
+    ASSERT_EQ(NestFlowTest::states[3], 1);
+    ASSERT_EQ(NestFlowTest::states[4], 2);
+    ASSERT_EQ(NestFlowTest::states[5], 3);
+
+    // while teardown 1 finish and then call parent 3 and then call parent 2
+    ASSERT_EQ(NestFlowTest::states[6], 1);
+    ASSERT_EQ(NestFlowTest::states[7], 3);
+    ASSERT_EQ(NestFlowTest::states[8], 2);
+}

@@ -169,18 +169,18 @@ void call(Coroutine* next){
 }
 
 void detach(){
-    Coroutine* next = Current->caller;
-    if (next){
+    Coroutine* parent = Current->caller;
+    if (parent){
         Current->caller = 0;
-        next->callee = 0;
+        parent->callee = 0;
     }
     else {
-        next = &Main;
-        if (next->callee){
-            next = next->callee;
+        parent = &Main;
+        if (parent->callee){
+            parent = parent->callee;
         }
     }
-    next->enter();
+    parent->enter();
 }
 
 
