@@ -1,33 +1,125 @@
 #include <gtest/gtest.h>
+#include <functional>
+#include <algorithm>
 
 #include <coroutine.h>
 
-int global_state = 0;
-
-class GStateToOne: public Coroutine{
+class SimpleFlowTest: public ::testing::Test{
 public:
-
-    void routine(){
-        global_state = 1;
+    static int state;
+protected:
+    void SetUp() override{
+        state = 0;
+        reset_sequence();
+    }
+    void TearDown() override{
+        state = 0;
     }
 };
 
-class GStateToTwo: public Coroutine{
+int SimpleFlowTest::state = 0;
+
+class SimpleStateAddOne: public Coroutine{
 public:
     void routine(){
-        global_state = 2;
+        SimpleFlowTest::state++;
     }
 };
 
-TEST(copy_stack, simple) {
+TEST_F(SimpleFlowTest, copy_stack_resume) {
     char start = 'x';
     StackBottom = &start;
-    GStateToOne* one = new GStateToOne();
-    GStateToTwo* two = new GStateToTwo();
-    ASSERT_EQ(global_state, 0);
+    SimpleStateAddOne* one = new SimpleStateAddOne();
+    SimpleStateAddOne* two = new SimpleStateAddOne();
+    ASSERT_EQ(SimpleFlowTest::state, 0);
     resume(one);
-    ASSERT_EQ(global_state, 1);
+    ASSERT_EQ(SimpleFlowTest::state, 1);
     resume(two);
-    ASSERT_EQ(global_state, 2);
-    // Coroutine* c = new Coroutine();
+    ASSERT_EQ(SimpleFlowTest::state, 2);
+}
+
+TEST_F(SimpleFlowTest, copy_stack_call) {
+    char start = 'x';
+    StackBottom = &start;
+    SimpleStateAddOne* one = new SimpleStateAddOne();
+    SimpleStateAddOne* two = new SimpleStateAddOne();
+    ASSERT_EQ(SimpleFlowTest::state, 0);
+    call(one);
+    ASSERT_EQ(SimpleFlowTest::state, 1);
+    call(two);
+    ASSERT_EQ(SimpleFlowTest::state, 2);
+}
+
+class NestFlowTest: public ::testing::Test{
+public:
+    const static int max = 10;
+    static int* states;
+    static int idx;
+    static void add(int value){
+        if(idx < max){
+            states[idx++] = value;
+        }
+    }
+protected:
+    void SetUp() override{
+        idx = 0;
+        std::fill(states, states + max, 0);
+        reset_sequence();
+    }
+    void TearDown() override{
+        idx = 0;
+        std::fill(states, states + max, 0);
+    }
+};
+
+int* NestFlowTest::states = new int[NestFlowTest::max];
+
+int NestFlowTest::idx = 0;
+
+class GStatesOperator: public Coroutine{
+public:
+    Coroutine* next;
+    GStatesOperator(int value, std::function<void(Coroutine*)> jump)
+    : value(value), jump(jump){}
+    void routine(){
+        NestFlowTest::add(value);
+        if(next){
+            jump(next);
+        }
+        NestFlowTest::add(value);
+    }
+private:
+    int value;
+    std::function<void(Coroutine*)> jump;
+};
+
+TEST_F(NestFlowTest, copy_stack_resume){
+    char start;
+    StackBottom = &start;
+    GStatesOperator* one = new GStatesOperator(1, resume);
+    GStatesOperator* two = new GStatesOperator(2, resume);
+    one->next = two;
+    resume(one);
+    ASSERT_EQ(NestFlowTest::idx, 3);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 2);
+}
+
+TEST_F(NestFlowTest, copy_stack_call){
+    char start;
+    StackBottom = &start;
+    GStatesOperator* one = new GStatesOperator(1, call);
+    GStatesOperator* two = new GStatesOperator(2, call);
+    GStatesOperator* three = new GStatesOperator(3, call);
+    one->next = two;
+    two->next = three;
+    call(one);
+    ASSERT_EQ(NestFlowTest::idx, 6);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 3);
+    ASSERT_EQ(NestFlowTest::states[3], 3);
+    ASSERT_EQ(NestFlowTest::states[4], 2);
+    ASSERT_EQ(NestFlowTest::states[5], 1);
 }

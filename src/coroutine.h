@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <setjmp.h>
+#include <string>
 
 // bottom address of start point of all coroutines
 extern char* StackBottom;
@@ -22,9 +23,14 @@ class Coroutine{
 protected:
     // make routine pure virtual function so we don't have to define it in coroutine.cpp
     virtual void routine() = 0;
+    // derived class is allowed to change coroutine id
+    std::string id;
 public:
-    Coroutine(size_t dummy=0);
+    Coroutine(size_t dummy=0, std::string id="unknown");
     ~Coroutine();
+    std::string get_id();
+    // reset stack buffer
+    void reset();
 
 // user of the class is not allow to directly access following membergs
 // derived class is not allow to modify following core members
@@ -59,6 +65,9 @@ void call(Coroutine*);
 
 // relinquish control to its caller
 void detach();
+
+// reset sequence
+void reset_sequence();
 
 Coroutine* currentCoroutine();
 Coroutine* mainCoroutine();

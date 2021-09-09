@@ -13,6 +13,7 @@ static class MainCoroutine: public Coroutine{
 public:
     MainCoroutine() {
         Current = this;
+        id = "main";
     }
     void routine(){}
 } Main;
@@ -28,7 +29,11 @@ void EmitLog(const char* message){
     std::cout << "Log: " << message << std::endl;
 }
 
-Coroutine::Coroutine(size_t dummy){
+std::string Coroutine::get_id(){
+    return id;
+}
+
+Coroutine::Coroutine(size_t dummy, std::string co_id){
     char stack_local;
     if (StackBottom){
         if(&stack_local < StackBottom ?
@@ -40,10 +45,15 @@ Coroutine::Coroutine(size_t dummy){
         }
 
     }
+    reset();
+    buffer_size = dummy;
+    id = co_id;
+}
+
+void Coroutine::reset(){
     stack_buffer = 0;
     low = 0;
     high = 0;
-    buffer_size = dummy;
     callee = 0;
     caller = 0;
 }
@@ -89,8 +99,10 @@ inline void Coroutine::storeStack(){
     else{
         low = &stack_local;
     }
-    if(high - low > buffer_size){
-        delete stack_buffer;
+    if(high - low > buffer_size || !stack_buffer){
+        if (stack_buffer){
+            delete stack_buffer;
+        }
         buffer_size = high - low;
         if(!(stack_buffer = new char[buffer_size])){
             EmitError("No more space available");
@@ -189,4 +201,8 @@ Coroutine* currentCoroutine(){
 
 Coroutine* mainCoroutine(){
     return &Main;
+}
+
+void reset_sequence(){
+    Main.reset();
 }
