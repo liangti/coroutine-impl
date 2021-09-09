@@ -128,12 +128,8 @@ inline void Coroutine::enter(){
         routine();
         delete Current->stack_buffer;
         Current->stack_buffer = 0;
-        if (to_be_resume){
-            Next = to_be_resume;
-            to_be_resume = 0;
-            resume(Next);
-        }
         detach();
+        return;
     }
     restoreStack();
 }
@@ -148,9 +144,7 @@ void resume(Coroutine* next){
     if (terminated(next)){
         EmitError("Attempt to resume a terminated coroutine");
     }
-    while(next->callee){
-        next = next->callee;
-    }
+
     next->enter();
 }
 
@@ -170,12 +164,7 @@ void call(Coroutine* next){
     // after next finish, call will return to current
     Current->callee = next;
     next->caller = Current;
-    while(next->callee){
-        next = next->callee;
-    }
-    if(next == Current){
-        EmitError("Attempting to call an operating coroutine");
-    }
+
     next->enter();
 }
 
@@ -187,7 +176,7 @@ void detach(){
     }
     else {
         next = &Main;
-        while (next->callee){
+        if (next->callee){
             next = next->callee;
         }
     }
@@ -205,4 +194,5 @@ Coroutine* mainCoroutine(){
 
 void reset_sequence(){
     Main.reset();
+    Current = &Main;
 }

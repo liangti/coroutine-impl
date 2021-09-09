@@ -79,8 +79,8 @@ int NestFlowTest::idx = 0;
 class GStatesOperator: public Coroutine{
 public:
     Coroutine* next;
-    GStatesOperator(int value, std::function<void(Coroutine*)> jump)
-    : value(value), jump(jump){}
+    GStatesOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
+    : value(value), jump(jump), Coroutine(0, id){}
     void routine(){
         NestFlowTest::add(value);
         if(next){
@@ -122,4 +122,19 @@ TEST_F(NestFlowTest, copy_stack_call){
     ASSERT_EQ(NestFlowTest::states[3], 3);
     ASSERT_EQ(NestFlowTest::states[4], 2);
     ASSERT_EQ(NestFlowTest::states[5], 1);
+}
+
+TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
+    char start;
+    StackBottom = &start;
+    GStatesOperator* one = new GStatesOperator(1, call);
+    GStatesOperator* two = new GStatesOperator(2, call);
+    one->next = two;
+    two->next = one;
+    call(one);
+    ASSERT_EQ(NestFlowTest::idx, 4);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 1);
+    ASSERT_EQ(NestFlowTest::states[3], 2);
 }
