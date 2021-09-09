@@ -5,11 +5,10 @@
 #include <setjmp.h>
 #include <string>
 
+namespace CoAPI{
+
 // bottom address of start point of all coroutines
 extern char* StackBottom;
-// the way to set StackBottom, set by coroutine user
-#define Sequencing(func) {char start; StackBottom = &start, func;}
-
 
 class Coroutine{
 // API expose to user
@@ -37,9 +36,9 @@ public:
 private:
     void enter();
     // store runtime stack to buffer
-    void storeStack();
+    void store_stack();
     // store buffer to runtime stack
-    void restoreStack();
+    void restore_stack();
 
     char* stack_buffer;
     char* low;
@@ -67,11 +66,16 @@ void call(Coroutine*);
 void detach();
 
 // reset sequence
-void reset_sequence();
+void resetSequence();
 
-Coroutine* currentCoroutine();
-Coroutine* mainCoroutine();
+// reset stack
+// it has to be inline to not create new function stack
+// so it has to be defined in header to expose to user
+inline void resetStack(){
+    char stack_local;
+    StackBottom = &stack_local;
+}
 
-void EmitLog(const char*);
+}; // namespace CoAPI
 
 #endif

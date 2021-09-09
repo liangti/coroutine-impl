@@ -4,11 +4,14 @@
 #include <coroutine.h>
 
 
+using namespace CoAPI;
+
+char* CoAPI::StackBottom;
+
 // global/static data
 static Coroutine* Current = 0;
 static Coroutine* Next;
 Coroutine* Coroutine::to_be_resume = 0;
-char* StackBottom;
 static class MainCoroutine: public Coroutine{
 public:
     MainCoroutine() {
@@ -19,7 +22,7 @@ public:
 } Main;
 
 // global utilities
-static void EmitError(const char* message){
+void EmitError(const char* message){
     std::cerr << "Error: " << message << std::endl;
     exit(1);
 }
@@ -63,7 +66,7 @@ Coroutine::~Coroutine(){
     stack_buffer = 0;
 }
 
-bool terminated(Coroutine* c){
+bool CoAPI::terminated(Coroutine* c){
     // if stack_buffer is deleted but buffer_size is larger than 0
     // we say the coroutine is terminated
     return (!c->stack_buffer) && (c->buffer_size > 0);
@@ -73,10 +76,10 @@ bool terminated(Coroutine* c){
 // because they must be in exact SAME stack where
 // resume/call is in!!!
 
-inline void Coroutine::restoreStack(){
+inline void Coroutine::restore_stack(){
     char local;
     if (&local >= low && &local <= high){
-        restoreStack();
+        restore_stack();
     }
     Current = this;
     // store stack_buffer to runtime stack
@@ -84,7 +87,7 @@ inline void Coroutine::restoreStack(){
     longjmp(Current->env, 1);
 }
 
-inline void Coroutine::storeStack(){
+inline void Coroutine::store_stack(){
     if(!low){
         if(!StackBottom){
             EmitError("StackBottom is not initialized");
@@ -113,10 +116,10 @@ inline void Coroutine::storeStack(){
     memcpy(stack_buffer, low, high - low);
 }
 
-inline void Coroutine::enter(){
+inline void CoAPI::Coroutine::enter(){
     // determine if current coroutine is still running
     if (!terminated(this)){
-        Current->storeStack();
+        Current->store_stack();
         // Current->restoreStack() will go back here
         // execute the rest of the code previous coroutine left
         if(setjmp(Current->env)){
@@ -131,10 +134,10 @@ inline void Coroutine::enter(){
         detach();
         return;
     }
-    restoreStack();
+    restore_stack();
 }
 
-void resume(Coroutine* next){
+void CoAPI::resume(Coroutine* next){
     if (!next){
         EmitError("Attempt to resume an empty coroutine");
     }
@@ -148,7 +151,7 @@ void resume(Coroutine* next){
     next->enter();
 }
 
-void call(Coroutine* next){
+void CoAPI::call(Coroutine* next){
     if (!next){
         EmitError("Attempt to call an empty coroutine");
     }
@@ -168,7 +171,7 @@ void call(Coroutine* next){
     next->enter();
 }
 
-void detach(){
+void CoAPI::detach(){
     Coroutine* parent = Current->caller;
     if (parent){
         Current->caller = 0;
@@ -183,6 +186,12 @@ void detach(){
     parent->enter();
 }
 
+void CoAPI::resetSequence(){
+    Main.reset();
+    Current = &Main;
+}
+
+// internal functions
 
 Coroutine* currentCoroutine(){
     return Current;
@@ -190,9 +199,4 @@ Coroutine* currentCoroutine(){
 
 Coroutine* mainCoroutine(){
     return &Main;
-}
-
-void reset_sequence(){
-    Main.reset();
-    Current = &Main;
 }
