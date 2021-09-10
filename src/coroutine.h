@@ -54,8 +54,6 @@ private:
     jmp_buf env;
     Coroutine* caller;
     Coroutine* callee;
-    static Coroutine* to_be_resume;
-
 };
 
 // determine if given coroutine is terminated

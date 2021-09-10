@@ -12,7 +12,6 @@ using namespace CoAPI;
 // global/static data
 static Coroutine* Current = 0;
 static Coroutine* Next;
-Coroutine* Coroutine::to_be_resume = 0;
 static class MainCoroutine: public Coroutine{
 public:
     MainCoroutine() {
