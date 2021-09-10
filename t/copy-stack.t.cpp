@@ -13,7 +13,6 @@ public:
 protected:
     void SetUp() override{
         state = 0;
-        resetSequence();
     }
     void TearDown() override{
         state = 0;
@@ -31,6 +30,7 @@ public:
 
 TEST_F(SimpleFlowTest, copy_stack_create_coroutine_on_stack){
     EXPECT_THROW({
+        COSTART
         SimpleStateAddOne error;
     }, CoException);
 }
@@ -43,6 +43,7 @@ TEST_F(SimpleFlowTest, copy_stack_create_next_coroutine_on_stack){
 }
 
 TEST_F(SimpleFlowTest, copy_stack_resume) {
+    COSTART
     SimpleStateAddOne* one = new SimpleStateAddOne();
     SimpleStateAddOne* two = new SimpleStateAddOne();
     ASSERT_EQ(SimpleFlowTest::state, 0);
@@ -53,6 +54,7 @@ TEST_F(SimpleFlowTest, copy_stack_resume) {
 }
 
 TEST_F(SimpleFlowTest, copy_stack_call) {
+    COSTART
     SimpleStateAddOne* one = new SimpleStateAddOne();
     SimpleStateAddOne* two = new SimpleStateAddOne();
     ASSERT_EQ(SimpleFlowTest::state, 0);
@@ -76,7 +78,6 @@ protected:
     void SetUp() override{
         idx = 0;
         std::fill(states, states + max, 0);
-        resetSequence();
     }
     void TearDown() override{
         idx = 0;
@@ -106,6 +107,7 @@ private:
 };
 
 TEST_F(NestFlowTest, copy_stack_resume){
+    COSTART
     GStatesOperator* one = new GStatesOperator(1, resume);
     GStatesOperator* two = new GStatesOperator(2, resume);
     one->next = two;
@@ -117,6 +119,7 @@ TEST_F(NestFlowTest, copy_stack_resume){
 }
 
 TEST_F(NestFlowTest, copy_stack_call){
+    COSTART
     GStatesOperator* one = new GStatesOperator(1, call);
     GStatesOperator* two = new GStatesOperator(2, call);
     GStatesOperator* three = new GStatesOperator(3, call);
@@ -133,6 +136,7 @@ TEST_F(NestFlowTest, copy_stack_call){
 }
 
 TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
+    COSTART
     GStatesOperator* one = new GStatesOperator(1, call);
     GStatesOperator* two = new GStatesOperator(2, call);
     one->next = two;
@@ -167,6 +171,7 @@ private:
 };
 
 TEST_F(NestFlowTest, copy_stack_call_overlap_complex_sequences){
+    COSTART
     GStatesDoubleOperator* one = new GStatesDoubleOperator(1, call);
     GStatesDoubleOperator* two = new GStatesDoubleOperator(2, call);
     GStatesDoubleOperator* three = new GStatesDoubleOperator(3, call);

@@ -17,9 +17,6 @@ private:
     std::string message;
 };
 
-// bottom address of start point of all coroutines
-extern char* StackBottom;
-
 class Coroutine{
 // API expose to user
     friend void resume(Coroutine*);
@@ -76,7 +73,12 @@ void call(Coroutine*);
 void detach();
 
 // reset sequence
-void resetSequence();
+void resetSequence(char*);
+
+// call COSTART macro before every sequence
+// it has to be macro since local have be
+// in same stack of corresponding coroutines
+#define COSTART {char local; resetSequence(&local);}
 
 }; // namespace CoAPI
 

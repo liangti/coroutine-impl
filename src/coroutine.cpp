@@ -5,10 +5,9 @@
 #include <exception>
 
 
+static char* StackBottom = 0;
 
 using namespace CoAPI;
-
-char* CoAPI::StackBottom;
 
 // global/static data
 static Coroutine* Current = 0;
@@ -41,9 +40,6 @@ Coroutine::Coroutine(size_t dummy, std::string co_id){
     char stack_local;
     if(&stack_local < (char*)this){
         throw CoException("Attempting to allocate a Coroutine on stack");
-    }
-    if (!StackBottom){
-        StackBottom = &stack_local;
     }
     reset();
     buffer_size = dummy;
@@ -183,10 +179,10 @@ void CoAPI::detach(){
     parent->enter();
 }
 
-void CoAPI::resetSequence(){
+void CoAPI::resetSequence(char* start){
     Main.reset();
     Current = &Main;
-    StackBottom = 0;
+    StackBottom = start;
 }
 
 // internal functions
