@@ -24,7 +24,7 @@ foreach(
     set(USER_LIBS_DIR /usr/local/lib)
     target_link_libraries(
         ${TEST}.t
-        cpp-coroutine
+        coco
         ${GTEST_BOTH_LIBRARIES}
         ${USER_LIBS_DIR}/libgmock.a
         ${USER_LIBS_DIR}/libgmock_main.a

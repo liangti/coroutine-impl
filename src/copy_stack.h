@@ -5,7 +5,7 @@
 #include <setjmp.h>
 #include <string>
 
-namespace CoAPI{
+namespace copy_stack_impl{
     
 struct CoException: public std::exception{
 public:

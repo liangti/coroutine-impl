@@ -1,13 +1,13 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include <coroutine.h>
+#include <copy_stack.h>
 #include <exception>
 
 
 static char* StackBottom = 0;
 
-using namespace CoAPI;
+using namespace copy_stack_impl;
 
 // global/static data
 static Coroutine* Current = 0;
@@ -58,7 +58,7 @@ Coroutine::~Coroutine(){
     stack_buffer = 0;
 }
 
-bool CoAPI::terminated(Coroutine* c){
+bool copy_stack_impl::terminated(Coroutine* c){
     // if stack_buffer is deleted but buffer_size is larger than 0
     // we say the coroutine is terminated
     return (!c->stack_buffer) && (c->buffer_size > 0);
@@ -120,7 +120,7 @@ inline void Coroutine::store_stack(){
     memcpy(stack_buffer, low, high - low);
 }
 
-inline void CoAPI::Coroutine::enter(){
+inline void copy_stack_impl::Coroutine::enter(){
     // determine if current coroutine is still running
     if (!terminated(this)){
         Current->store_stack();
@@ -147,7 +147,7 @@ inline void CoAPI::Coroutine::enter(){
     restore_stack();
 }
 
-void CoAPI::resume(Coroutine* next){
+void copy_stack_impl::resume(Coroutine* next){
     if (!next){
         throw CoException("Attempt to resume an empty coroutine");
     }
@@ -161,7 +161,7 @@ void CoAPI::resume(Coroutine* next){
     next->enter();
 }
 
-void CoAPI::call(Coroutine* next){
+void copy_stack_impl::call(Coroutine* next){
     if (!next){
         throw CoException("Attempt to call an empty coroutine");
     }
@@ -181,7 +181,7 @@ void CoAPI::call(Coroutine* next){
     next->enter();
 }
 
-void CoAPI::detach(){
+void copy_stack_impl::detach(){
     Coroutine* parent = Current->caller;
     if (parent){
         Current->caller = 0;
@@ -196,7 +196,7 @@ void CoAPI::detach(){
     parent->enter();
 }
 
-void CoAPI::resetSequence(char* start){
+void copy_stack_impl::resetSequence(char* start){
     Main.reset();
     Current = &Main;
     StackBottom = start;

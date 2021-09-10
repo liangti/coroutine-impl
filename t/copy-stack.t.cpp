@@ -2,9 +2,9 @@
 #include <functional>
 #include <algorithm>
 
-#include <coroutine.h>
+#include <copy_stack.h>
 
-using namespace CoAPI;
+using namespace copy_stack_impl;
 
 
 class SimpleFlowTest: public ::testing::Test{
