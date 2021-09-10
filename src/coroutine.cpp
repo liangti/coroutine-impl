@@ -127,6 +127,7 @@ inline void CoAPI::Coroutine::enter(){
         Current->store_stack();
         // Current->restoreStack() will go back here
         // execute the rest of the code previous coroutine left
+        // setjmp only store local stack, while low->high store previous stack
         if(setjmp(Current->env)){
             // return to resume/call to let current coroutine finish
             // the rest of work
