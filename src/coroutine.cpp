@@ -71,8 +71,16 @@ bool CoAPI::terminated(Coroutine* c){
 
 inline void Coroutine::restore_stack(){
     char local;
+    // see what low and high mean in store_stack
+    // it is possible that A->B->A
+    // when back to A low->high include PART OF next coroutine stack
+    // when next coroutine finish that PART OF next coroutine stack
+    // is clean so if we memcpy we will get segfault.
+    // the way is to have extra function call to keep occupy new stack
+    // until that PART OF next coroutine stack is used, then we memcpy
     if (&local >= low && &local <= high){
         restore_stack();
+        return;
     }
     Current = this;
     // store stack_buffer to runtime stack
@@ -81,6 +89,10 @@ inline void Coroutine::restore_stack(){
 }
 
 inline void Coroutine::store_stack(){
+    // usually high equals to StackBottom refers to start point of coroutine
+    // low assign to local stack of next coroutine which
+    // not only include current coroutine stack but also PART OF next coroutine
+    // stack. Since Current->store_stack() is invoked by next coroutine!!!
     if(!low){
         if(!StackBottom){
             throw CoException("StackBottom is not initialized");
@@ -116,6 +128,8 @@ inline void CoAPI::Coroutine::enter(){
         // Current->restoreStack() will go back here
         // execute the rest of the code previous coroutine left
         if(setjmp(Current->env)){
+            // return to resume/call to let current coroutine finish
+            // the rest of work
             return;
         }
     }
@@ -127,6 +141,9 @@ inline void CoAPI::Coroutine::enter(){
         detach();
         return;
     }
+    // when current coroutine haven't finish and call/resume to other corotine
+    // detach enter will go here and restore stack for current coroutine
+    // to let it finish the rest of work
     restore_stack();
 }
 
