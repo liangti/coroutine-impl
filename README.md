@@ -6,10 +6,11 @@ From paper: http://akira.ruc.dk/~keld/research/COROUTINE/COROUTINE-1.0/DOC/COROU
 
 ## Background
 
-Normal function call like A calls B, execution will back to A ONLY after B finished. The stack of B will get clean up and A will continue from last function call(B) to
-execute the rest of the code.
+Normal function call like A calls B, execution control will back to A ONLY after B 
+finished. The stack of B will get clean up and A will continue from last function call(B) 
+to execute the rest of the code.
 
-Coroutine is a concept that allow execution to be passed around two tasks A and B,
+Coroutine is a concept that allows execution to be passed around two tasks A and B,
 so that while A executes it could yield to B and while B wants to stop it could yield back 
 to A to let A continue.
 
