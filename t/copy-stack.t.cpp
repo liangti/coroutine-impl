@@ -6,6 +6,7 @@
 
 using namespace CoAPI;
 
+
 class SimpleFlowTest: public ::testing::Test{
 public:
     static int state;
@@ -28,8 +29,20 @@ public:
     }
 };
 
+TEST_F(SimpleFlowTest, copy_stack_create_coroutine_on_stack){
+    EXPECT_THROW({
+        SimpleStateAddOne error;
+    }, CoException);
+}
+
+TEST_F(SimpleFlowTest, copy_stack_create_next_coroutine_on_stack){
+    SimpleStateAddOne* first = new SimpleStateAddOne();
+    EXPECT_THROW({
+        SimpleStateAddOne next;
+    }, CoException);
+}
+
 TEST_F(SimpleFlowTest, copy_stack_resume) {
-    resetStack();
     SimpleStateAddOne* one = new SimpleStateAddOne();
     SimpleStateAddOne* two = new SimpleStateAddOne();
     ASSERT_EQ(SimpleFlowTest::state, 0);
@@ -40,7 +53,6 @@ TEST_F(SimpleFlowTest, copy_stack_resume) {
 }
 
 TEST_F(SimpleFlowTest, copy_stack_call) {
-    resetStack();
     SimpleStateAddOne* one = new SimpleStateAddOne();
     SimpleStateAddOne* two = new SimpleStateAddOne();
     ASSERT_EQ(SimpleFlowTest::state, 0);
@@ -94,7 +106,6 @@ private:
 };
 
 TEST_F(NestFlowTest, copy_stack_resume){
-    resetStack();
     GStatesOperator* one = new GStatesOperator(1, resume);
     GStatesOperator* two = new GStatesOperator(2, resume);
     one->next = two;
@@ -106,7 +117,6 @@ TEST_F(NestFlowTest, copy_stack_resume){
 }
 
 TEST_F(NestFlowTest, copy_stack_call){
-    resetStack();
     GStatesOperator* one = new GStatesOperator(1, call);
     GStatesOperator* two = new GStatesOperator(2, call);
     GStatesOperator* three = new GStatesOperator(3, call);
@@ -123,7 +133,6 @@ TEST_F(NestFlowTest, copy_stack_call){
 }
 
 TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
-    resetStack();
     GStatesOperator* one = new GStatesOperator(1, call);
     GStatesOperator* two = new GStatesOperator(2, call);
     one->next = two;
@@ -158,7 +167,6 @@ private:
 };
 
 TEST_F(NestFlowTest, copy_stack_call_overlap_complex_sequences){
-    resetStack();
     GStatesDoubleOperator* one = new GStatesDoubleOperator(1, call);
     GStatesDoubleOperator* two = new GStatesDoubleOperator(2, call);
     GStatesDoubleOperator* three = new GStatesDoubleOperator(3, call);

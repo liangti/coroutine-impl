@@ -6,6 +6,16 @@
 #include <string>
 
 namespace CoAPI{
+    
+struct CoException: public std::exception{
+public:
+    CoException(std::string message): message(message){}
+    inline std::string get_message(){
+        return message;
+    }
+private:
+    std::string message;
+};
 
 // bottom address of start point of all coroutines
 extern char* StackBottom;
@@ -67,14 +77,6 @@ void detach();
 
 // reset sequence
 void resetSequence();
-
-// reset stack
-// it has to be inline to not create new function stack
-// so it has to be defined in header to expose to user
-inline void resetStack(){
-    char stack_local;
-    StackBottom = &stack_local;
-}
 
 }; // namespace CoAPI
 

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 
 #include <coroutine.h>
+#include <exception>
+
 
 
 using namespace CoAPI;
@@ -24,7 +26,6 @@ public:
 // global utilities
 void EmitError(const char* message){
     std::cerr << "Error: " << message << std::endl;
-    exit(1);
 }
 
 // global external utilities
@@ -38,15 +39,11 @@ std::string Coroutine::get_id(){
 
 Coroutine::Coroutine(size_t dummy, std::string co_id){
     char stack_local;
-    if (StackBottom){
-        if(&stack_local < StackBottom ?
-           // if object on stack local should be smaller than this
-           &stack_local <= (char*)this && (char*)this <= StackBottom:
-           // if object on heap local should be bigger than this
-           &stack_local >= (char*)this && (char*)this >= StackBottom){
-            EmitError("Attempting to allocate a Coroutine on stack");
-        }
-
+    if(&stack_local < (char*)this){
+        throw CoException("Attempting to allocate a Coroutine on stack");
+    }
+    if (!StackBottom){
+        StackBottom = &stack_local;
     }
     reset();
     buffer_size = dummy;
@@ -90,7 +87,7 @@ inline void Coroutine::restore_stack(){
 inline void Coroutine::store_stack(){
     if(!low){
         if(!StackBottom){
-            EmitError("StackBottom is not initialized");
+            throw CoException("StackBottom is not initialized");
         }
         low = StackBottom;
         high = StackBottom;
@@ -108,7 +105,7 @@ inline void Coroutine::store_stack(){
         }
         buffer_size = high - low;
         if(!(stack_buffer = new char[buffer_size])){
-            EmitError("No more space available");
+            throw CoException("No more space available");
         }
     }
 
@@ -139,13 +136,13 @@ inline void CoAPI::Coroutine::enter(){
 
 void CoAPI::resume(Coroutine* next){
     if (!next){
-        EmitError("Attempt to resume an empty coroutine");
+        throw CoException("Attempt to resume an empty coroutine");
     }
     if (next == Current){
         return;
     }
     if (terminated(next)){
-        EmitError("Attempt to resume a terminated coroutine");
+        throw CoException("Attempt to resume a terminated coroutine");
     }
 
     next->enter();
@@ -153,13 +150,13 @@ void CoAPI::resume(Coroutine* next){
 
 void CoAPI::call(Coroutine* next){
     if (!next){
-        EmitError("Attempt to call an empty coroutine");
+        throw CoException("Attempt to call an empty coroutine");
     }
     if (next == Current){
         return;
     }
     if (terminated(next)){
-        EmitError("Attempt to call a terminated coroutine");
+        throw CoException("Attempt to call a terminated coroutine");
     }
     // current coroutine call next
     // so that current is next's caller, next is current's callee
@@ -189,6 +186,7 @@ void CoAPI::detach(){
 void CoAPI::resetSequence(){
     Main.reset();
     Current = &Main;
+    StackBottom = 0;
 }
 
 // internal functions
