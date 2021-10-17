@@ -1,5 +1,5 @@
-#ifndef COROUTINE_IMPL
-#define COROUTINE_IMPL
+#ifndef COROUTINE_COPY_STACK_IMPL
+#define COROUTINE_COPY_STACK_IMPL
 
 #include <stddef.h>
 #include <setjmp.h>
@@ -32,7 +32,7 @@ protected:
     // derived class is allowed to change coroutine id
     std::string id;
 public:
-    Coroutine(size_t dummy=0, std::string id="unknown");
+    Coroutine(std::string id="unknown");
     ~Coroutine();
     std::string get_id();
     // reset stack buffer
@@ -78,6 +78,6 @@ void resetSequence(char*);
 // in same stack of corresponding coroutines
 #define COSTART {char local; resetSequence(&local);}
 
-}; // namespace CoAPI
+}; // namespace copy_stack_impl
 
 #endif

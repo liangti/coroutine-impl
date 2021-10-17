@@ -93,7 +93,7 @@ class GStatesOperator: public Coroutine{
 public:
     Coroutine* next;
     GStatesOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
-    : value(value), jump(jump), Coroutine(0, id){}
+    : value(value), jump(jump), Coroutine(id){}
     void routine(){
         NestFlowTest::add(value);
         if(next){
@@ -153,7 +153,7 @@ class GStatesDoubleOperator: public Coroutine{
 public:
     Coroutine* next;
     GStatesDoubleOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
-    : value(value), jump(jump), Coroutine(0, id){}
+    : value(value), jump(jump), Coroutine(id){}
     void routine(){
         NestFlowTest::add(value);
         if(next){

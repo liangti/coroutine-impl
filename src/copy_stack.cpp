@@ -35,13 +35,13 @@ std::string Coroutine::get_id(){
     return id;
 }
 
-Coroutine::Coroutine(size_t dummy, std::string co_id){
+Coroutine::Coroutine(std::string co_id){
     char stack_local;
     if(&stack_local < (char*)this){
         throw CoException("Attempting to allocate a Coroutine on stack");
     }
     reset();
-    buffer_size = dummy;
+    buffer_size = 0;
     id = co_id;
 }
 
