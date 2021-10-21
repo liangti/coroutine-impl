@@ -5,6 +5,40 @@
 
 using namespace share_stack_impl;
 
+#define EXTRA_ARGS_SPACE 80
+
+/*
+A test case to demonstrate how share stack works.
+
+The eat() function is actually climbing stack and allocate a space
+far from current function frame. And it never returns so stack of eat()
+never recycle but just keep there. Any time we want, longjmp() can
+bring us back to eat().
+*/
+
+TEST_F(SimpleFlowTest, visualize_stack_pointer){
+    size_t stack_start;
+    COSTART
+    size_t after_call;
+    SimpleStateAddOne* one = new SimpleStateAddOne();
+    SimpleStateAddOne* two = new SimpleStateAddOne();
+    resume(one);
+    resume(two);
+    Task* main = getMainTask();
+    Task* ptr;
+    for(ptr = main->suc; ptr != main; ptr = ptr->suc){
+        if(ptr->suc == main){
+            // the gap is main_stack_size + some function args push to stack
+            // so it must be bigger than
+            ASSERT_GT((char*)&stack_start - (char*)ptr, DEFAULT_STACK_SIZE + EXTRA_ARGS_SPACE);
+        }
+        if(ptr->pred != main){
+            // gap for each task address is fixed
+            ASSERT_EQ((char*)ptr - (char*)ptr->pred, DEFAULT_STACK_SIZE + EXTRA_ARGS_SPACE);
+        }
+    }
+}
+
 // helper function
 void validate_pred_suc_linkedlist(){
     // pred suc linkedlist must be cycle, main back to main
@@ -63,8 +97,7 @@ TEST_F(LinkedListTest, reset_state){
     ASSERT_EQ(main->next, main->suc);
 
     // size equals to `share_offset` in eat()
-    // TODO: exact number here is very fragile, any new line will break this
-    // ASSERT_EQ(main->size, DEFAULT_STACK_SIZE + 80);
+    ASSERT_EQ(main->size, DEFAULT_STACK_SIZE + EXTRA_ARGS_SPACE);
 }
 
 TEST_F(SimpleFlowTest, share_stack_resume){
@@ -78,10 +111,8 @@ TEST_F(SimpleFlowTest, share_stack_resume){
     ASSERT_EQ(SimpleFlowTest::state, 2);
 }
 
-// infinite loop, second task node point to itself
-// everytime a new added task is suc to MainTask
-// so local_task.suc always fresh
-// it is local_task that change its suc so that suc->suc == suc 
+
+
 TEST_F(LinkedListTest, share_stack_resume){
     COSTART
     SimpleStateAddOne* one = new SimpleStateAddOne();
