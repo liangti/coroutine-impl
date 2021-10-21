@@ -198,3 +198,36 @@ TEST_F(NestFlowTest, share_stack_resume){
     ASSERT_EQ(NestFlowTest::states[1], 2);
     ASSERT_EQ(NestFlowTest::states[2], 2);
 }
+
+TEST_F(NestFlowTest, copy_stack_call){
+    COSTART
+    GStatesOperator* one = new GStatesOperator(1, call);
+    GStatesOperator* two = new GStatesOperator(2, call);
+    GStatesOperator* three = new GStatesOperator(3, call);
+    one->next = two;
+    two->next = three;
+    call(one);
+    ASSERT_EQ(NestFlowTest::idx, 6);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 3);
+    ASSERT_EQ(NestFlowTest::states[3], 3);
+    ASSERT_EQ(NestFlowTest::states[4], 2);
+    ASSERT_EQ(NestFlowTest::states[5], 1);
+}
+
+// Segfault
+TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
+    GTEST_SKIP() << "Skip since it is segfault now";
+    COSTART
+    GStatesOperator* one = new GStatesOperator(1, call);
+    GStatesOperator* two = new GStatesOperator(2, call);
+    one->next = two;
+    two->next = one;
+    call(one);
+    ASSERT_EQ(NestFlowTest::idx, 4);
+    ASSERT_EQ(NestFlowTest::states[0], 1);
+    ASSERT_EQ(NestFlowTest::states[1], 2);
+    ASSERT_EQ(NestFlowTest::states[2], 1);
+    ASSERT_EQ(NestFlowTest::states[3], 2);
+}
