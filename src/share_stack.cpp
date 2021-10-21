@@ -219,19 +219,7 @@ void share_stack_impl::resetSequence(size_t main_stack_size){
     /*
     The reason why here needs a maximum stack size is:
     from &local_task to &local_task + MAX_STACK_SIZE is the area
-    caller of resetSequence local, if coroutine runs in a place near
-    local_task it will corrupt current stack. See an example:
-    
-    void example(){
-        resetSequence(); // local_task here
-        // co1 co2 start right after local task since resetSequence() does return
-        // and its stack frame is recycled
-        MyCoroutine* co1 = new MyCoroutine();
-        MyCoroutine* co2 = new MyCoroutine();
-    }
-    Must guarantee eat() is not running in stack that example is located!!!
-    The `main_stack_size` is the gap to prevent this. Must be carefully set.
-    See visualize_stack_pointer test case in share-stack.t.cpp
+    preserve for all coroutines.
     */
     local_task.size = MAX_STACK_SIZE;
     Main.stack_size = main_stack_size;
