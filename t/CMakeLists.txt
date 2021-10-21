@@ -8,12 +8,14 @@ configure_file(
 foreach(
     TEST
     copy-stack
+    share-stack
 )
     add_executable(${TEST}.t ${TEST}.t.cpp)
     target_include_directories(
         ${TEST}.t
         PRIVATE
         $<BUILD_INTERFACE:${CMAKE_ROOT_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_ROOT_DIR}/t>
     )
     target_include_directories(
         ${TEST}.t

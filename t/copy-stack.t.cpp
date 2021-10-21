@@ -1,32 +1,10 @@
-#include <gtest/gtest.h>
-#include <functional>
-#include <algorithm>
+#define COPY_STACK_IMPL
+#include <suites.h>
 
 #include <copy_stack.h>
 
 using namespace copy_stack_impl;
 
-
-class SimpleFlowTest: public ::testing::Test{
-public:
-    static int state;
-protected:
-    void SetUp() override{
-        state = 0;
-    }
-    void TearDown() override{
-        state = 0;
-    }
-};
-
-int SimpleFlowTest::state = 0;
-
-class SimpleStateAddOne: public Coroutine{
-public:
-    void routine(){
-        SimpleFlowTest::state++;
-    }
-};
 
 TEST_F(SimpleFlowTest, copy_stack_create_coroutine_on_stack){
     EXPECT_THROW({
@@ -63,48 +41,6 @@ TEST_F(SimpleFlowTest, copy_stack_call) {
     call(two);
     ASSERT_EQ(SimpleFlowTest::state, 2);
 }
-
-class NestFlowTest: public ::testing::Test{
-public:
-    const static int max = 10;
-    static int* states;
-    static int idx;
-    static void add(int value){
-        if(idx < max){
-            states[idx++] = value;
-        }
-    }
-protected:
-    void SetUp() override{
-        idx = 0;
-        std::fill(states, states + max, 0);
-    }
-    void TearDown() override{
-        idx = 0;
-        std::fill(states, states + max, 0);
-    }
-};
-
-int* NestFlowTest::states = new int[NestFlowTest::max];
-
-int NestFlowTest::idx = 0;
-
-class GStatesOperator: public Coroutine{
-public:
-    Coroutine* next;
-    GStatesOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
-    : value(value), jump(jump), Coroutine(id){}
-    void routine(){
-        NestFlowTest::add(value);
-        if(next){
-            jump(next);
-        }
-        NestFlowTest::add(value);
-    }
-private:
-    int value;
-    std::function<void(Coroutine*)> jump;
-};
 
 TEST_F(NestFlowTest, copy_stack_resume){
     COSTART
@@ -149,26 +85,6 @@ TEST_F(NestFlowTest, copy_stack_call_overlap_sequences){
     ASSERT_EQ(NestFlowTest::states[3], 2);
 }
 
-class GStatesDoubleOperator: public Coroutine{
-public:
-    Coroutine* next;
-    GStatesDoubleOperator(int value, std::function<void(Coroutine*)> jump, std::string id="unknown")
-    : value(value), jump(jump), Coroutine(id){}
-    void routine(){
-        NestFlowTest::add(value);
-        if(next){
-            jump(next);
-        }
-        NestFlowTest::add(value);
-        if(next){
-            jump(next);
-        }
-        NestFlowTest::add(value);
-    }
-private:
-    int value;
-    std::function<void(Coroutine*)> jump;
-};
 
 TEST_F(NestFlowTest, copy_stack_call_overlap_complex_sequences){
     COSTART

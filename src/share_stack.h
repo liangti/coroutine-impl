@@ -1,13 +1,29 @@
-#ifndef COROUTINE_COPY_STACK_IMPL
-#define COROUTINE_COPY_STACK_IMPL
+#ifndef COROUTINE_SHARE_STACK_IMPL
+#define COROUTINE_SHARE_STACK_IMPL
 
-#include <stddef.h>
 #include <setjmp.h>
 #include <string>
 
 #include <utils.h>
-namespace copy_stack_impl{
-    
+
+namespace share_stack_impl{
+
+class Coroutine;
+
+// internal default macros
+#define MIN_STACK_SIZE 500
+#define DEFAULT_STACK_SIZE 10000
+#define MAX_STACK_SIZE 50000
+
+// A control block that allocate for runtime stack
+struct Task{
+    Coroutine* co;
+    jmp_buf env;
+    size_t used;
+    size_t size;
+    struct Task *prev, *next;
+    struct Task *pred, *suc;
+};
 
 class Coroutine{
 // API expose to user
@@ -15,7 +31,7 @@ class Coroutine{
     friend void call(Coroutine*);
     friend void detach();
     friend bool terminated(Coroutine*);
-
+    friend void resetSequence(size_t);
 // user of the class is not allow to construct/run/destruct coroutine directly
 // derived class can override following functions to achieve custom logics
 protected:
@@ -24,30 +40,22 @@ protected:
     // derived class is allowed to change coroutine id
     std::string id;
 public:
-    Coroutine(); // default constructor id="unknown"
+    Coroutine(); // default constructor with default stack size and id="unknown"
     Coroutine(std::string); // custom coroutine id
+    Coroutine(size_t); // custom stack size
+    Coroutine(size_t, std::string);
     ~Coroutine();
     std::string get_id();
-    // reset stack buffer
-    void reset();
-
-// user of the class is not allow to directly access following membergs
-// derived class is not allow to modify following core members
 private:
+    Coroutine *caller, *callee;
+    size_t ready, terminated;
+    Task* task;
     void enter();
-    // store runtime stack to buffer
-    void store_stack();
-    // store buffer to runtime stack
-    void restore_stack();
-
-    char* stack_buffer;
-    char* low;
-    char* high;
-    size_t buffer_size;
-    jmp_buf env;
-    Coroutine* caller;
-    Coroutine* callee;
+    void eat();
+    size_t stack_size;
+    static Coroutine* ToBeResume;
 };
+
 
 // determine if given coroutine is terminated
 bool terminated(Coroutine*);
@@ -64,13 +72,16 @@ void call(Coroutine*);
 void detach();
 
 // reset sequence
-void resetSequence(char*);
+void resetSequence(size_t main_stack_size=DEFAULT_STACK_SIZE);
 
-// call COSTART macro before every sequence
-// it has to be macro since local have be
-// in same stack of corresponding coroutines
-#define COSTART {char local; resetSequence(&local);}
+#define COSTART resetSequence();
 
-}; // namespace copy_stack_impl
+// internal functions
+
+Task* getMainTask();
+
+Coroutine* getCurrentCoroutine();
+
+}; // namespace share_stack_impl
 
 #endif

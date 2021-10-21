@@ -1,8 +1,6 @@
-#include <iostream>
 #include <stdlib.h>
 
 #include <copy_stack.h>
-#include <exception>
 
 
 static char* StackBottom = 0;
@@ -21,15 +19,6 @@ public:
     void routine(){}
 } Main;
 
-// global utilities
-void EmitError(const char* message){
-    std::cerr << "Error: " << message << std::endl;
-}
-
-// global external utilities
-void EmitLog(const char* message){
-    std::cout << "Log: " << message << std::endl;
-}
 
 std::string Coroutine::get_id(){
     return id;
@@ -43,6 +32,10 @@ Coroutine::Coroutine(std::string co_id){
     reset();
     buffer_size = 0;
     id = co_id;
+}
+
+Coroutine::Coroutine(): Coroutine::Coroutine("unknown"){
+    
 }
 
 void Coroutine::reset(){

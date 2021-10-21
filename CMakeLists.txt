@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(
     coco
     src/copy_stack.cpp
+    src/share_stack.cpp
 )
 
 target_include_directories(
