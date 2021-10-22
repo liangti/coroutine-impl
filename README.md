@@ -33,4 +33,31 @@ Memory copy could be the bottleneck of this method
 
 ## Share Stack
 
-TODO
+Is the second method the paper presents.
+
+Still focus on how to keep function runtime stack not being cleaned up.
+
+The idea is to have a never return infinite while loop that consume routines. This function
+must be in a safe place so that it does not corrupt:
+- normal runtime stack(non coroutine parts)
+- heap space
+
+In the demo code from the paper it specifies a fixed size(or let user specify) and use
+recursive call to climb to that location and start infinite loop there.
+
+The way to return from infinite loop is by `setjmp/longjmp` so that the runtime stack
+never gets cleaned up.
+
+Meanwhile the infinite loop also keep climbing the stack to pre-allocate necessary runtime
+stack space. When it climb to fixed stack size it stop and the place it start to the place
+it stop becomes available runtime stack. Next routine will start execute from the place it
+start, enter by `setjmp/longjmp` also.
+
+### Caveat
+
+This implementation highly relies on the whether the stack size is safe or not. If it is
+too small it will corrupt runtime stack, if it is too large either stackoverflow or it
+corrupt heap space.
+
+> Could it be possible to protect that piece of memory from being consume by runtime stack
+and also heap(malloc for example)?
